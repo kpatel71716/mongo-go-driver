@@ -485,27 +485,14 @@ func (p *pool) closeConnection(c *connection) error {
 }
 
 // removeConnection removes a connection from the pool.
-func (p *pool) removeConnection(c *connection, reason string) error {
+func (p *pool) removeConnection(c *connection) error {
 	if c.pool != p {
 		return ErrWrongPool
 	}
-
-	var publishEvent bool
 	p.Lock()
-	if _, ok := p.opened[c.poolID]; ok {
-		publishEvent = true
-		delete(p.opened, c.poolID)
-	}
+	delete(p.opened, c.poolID)
 	p.Unlock()
 
-	if publishEvent && p.monitor != nil {
-		c.pool.monitor.Event(&event.PoolEvent{
-			Type:         event.ConnectionClosed,
-			Address:      c.pool.address.String(),
-			ConnectionID: c.poolID,
-			Reason:       reason,
-		})
-	}
 	return nil
 }
 

@@ -123,7 +123,10 @@ type ClientOptions struct {
 
 	err error
 	uri string
+<<<<<<< HEAD
 	cs  *connstring.ConnString
+=======
+>>>>>>> b247fc5f87055756391502f2665282f78ef72193
 
 	// These options are for internal use only and should not be set. They are deprecated and are
 	// not part of the stability guarantee. They may be removed in the future.
@@ -166,6 +169,12 @@ func (c *ClientOptions) GetURI() string {
 	return c.uri
 }
 
+// GetURI returns the original URI used to configure the ClientOptions instance. If ApplyURI was not called during
+// construction, this returns "".
+func (c *ClientOptions) GetURI() string {
+	return c.uri
+}
+
 // ApplyURI parses the given URI and sets options accordingly. The URI can contain host names, IPv4/IPv6 literals, or
 // an SRV record that will be resolved when the Client is created. When using an SRV record, TLS support is
 // implictly enabled. Specify the "tls=false" URI option to override this.
@@ -186,7 +195,11 @@ func (c *ClientOptions) ApplyURI(uri string) *ClientOptions {
 	}
 
 	c.uri = uri
+<<<<<<< HEAD
 	cs, err := connstring.ParseAndValidate(uri)
+=======
+	cs, err := connstring.Parse(uri)
+>>>>>>> b247fc5f87055756391502f2665282f78ef72193
 	if err != nil {
 		c.err = err
 		return c

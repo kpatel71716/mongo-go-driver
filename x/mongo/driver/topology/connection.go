@@ -50,9 +50,7 @@ type connection struct {
 	config               *connectionConfig
 	cancelConnectContext context.CancelFunc
 	connectContextMade   chan struct{}
-	canStream            bool
-	currentlyStreaming   bool
-	connectContextMutex  sync.Mutex
+	mu                   sync.Mutex
 
 	// pool related fields
 	pool         *pool
@@ -111,23 +109,17 @@ func (c *connection) connect(ctx context.Context) {
 	}
 	defer close(c.connectDone)
 
-	c.connectContextMutex.Lock()
+	c.mu.Lock()
 	ctx, c.cancelConnectContext = context.WithCancel(ctx)
-	c.connectContextMutex.Unlock()
-
+	c.mu.Unlock()
 	defer func() {
-		var cancelFn context.CancelFunc
-
-		c.connectContextMutex.Lock()
-		cancelFn = c.cancelConnectContext
-		c.cancelConnectContext = nil
-		c.connectContextMutex.Unlock()
-
-		if cancelFn != nil {
-			cancelFn()
+		c.mu.Lock()
+		if c.cancelConnectContext != nil {
+			c.cancelConnectContext()
+			c.cancelConnectContext = nil
 		}
+		c.mu.Unlock()
 	}()
-
 	close(c.connectContextMade)
 
 	// Assign the result of DialContext to a temporary net.Conn to ensure that c.nc is not set in an error case.
@@ -216,30 +208,12 @@ func (c *connection) wait() error {
 
 func (c *connection) closeConnectContext() {
 	<-c.connectContextMade
-	var cancelFn context.CancelFunc
-
-	c.connectContextMutex.Lock()
-	cancelFn = c.cancelConnectContext
-	c.cancelConnectContext = nil
-	c.connectContextMutex.Unlock()
-
-	if cancelFn != nil {
-		cancelFn()
+	c.mu.Lock()
+	if c.cancelConnectContext != nil {
+		c.cancelConnectContext()
+		c.cancelConnectContext = nil
 	}
-}
-
-func transformNetworkError(originalError error, contextDeadlineUsed bool) error {
-	if originalError == nil {
-		return nil
-	}
-	if !contextDeadlineUsed {
-		return originalError
-	}
-
-	if netErr, ok := originalError.(net.Error); ok && netErr.Timeout() {
-		return context.DeadlineExceeded
-	}
-	return originalError
+	c.mu.Unlock()
 }
 
 func (c *connection) writeWireMessage(ctx context.Context, wm []byte) error {
@@ -366,12 +340,12 @@ func (c *connection) close() error {
 	if c.nc != nil {
 		err = c.nc.Close()
 	}
+	atomic.StoreInt32(&c.connected, disconnected)
 
+	if c.pool != nil {
+		_ = c.pool.removeConnection(c)
+	}
 	return err
-}
-
-func (c *connection) closed() bool {
-	return atomic.LoadInt32(&c.connected) == disconnected
 }
 
 func (c *connection) idleTimeoutExpired() bool {

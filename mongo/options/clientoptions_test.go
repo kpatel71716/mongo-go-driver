@@ -499,15 +499,7 @@ func TestClientOptions(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				result := Client().ApplyURI(tc.uri)
-
-				// Manually add the URI and ConnString to the test expectations to avoid adding them in each test
-				// definition. The ConnString should only be recorded if there was no error while parsing.
-				tc.result.uri = tc.uri
-				cs, err := connstring.ParseAndValidate(tc.uri)
-				if err == nil {
-					tc.result.cs = &cs
-				}
-
+				tc.result.uri = tc.uri // manually add URI to avoid writing it in each test
 				if diff := cmp.Diff(
 					tc.result, result,
 					cmp.AllowUnexported(ClientOptions{}, readconcern.ReadConcern{}, writeconcern.WriteConcern{}, readpref.ReadPref{}),
