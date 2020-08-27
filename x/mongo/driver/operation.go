@@ -442,8 +442,10 @@ func (op Operation) Execute(ctx context.Context, scratch []byte) error {
 				if err.Code != unknownReplWriteConcernCode && err.Code != unsatisfiableWriteConcernCode {
 					err.Labels = append(err.Labels, UnknownTransactionCommitResult)
 				}
-				if retryableErr && retryEnabled {
-					err.Labels = append(err.Labels, RetryableWriteError)
+				// The UnknownTransactionCommitResult label is added to all writeConcernErrors besides unknownReplWriteConcernCode
+				// and unsatisfiableWriteConcernCode
+				if err.Code != unknownReplWriteConcernCode && err.Code != unsatisfiableWriteConcernCode {
+					err.Labels = append(err.Labels, UnknownTransactionCommitResult)
 				}
 				return err
 			}

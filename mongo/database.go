@@ -134,7 +134,7 @@ func (db *Database) Aggregate(ctx context.Context, pipeline interface{},
 
 func (db *Database) processRunCommand(ctx context.Context, cmd interface{},
 	opts ...*options.RunCmdOptions) (*operation.Command, *session.Client, error) {
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && db.client.sessionPool != nil {
 		var err error
 		sess, err = session.NewClientSession(db.client.sessionPool, db.client.id, session.Implicit)
@@ -238,7 +238,7 @@ func (db *Database) Drop(ctx context.Context) error {
 		ctx = context.Background()
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && db.client.sessionPool != nil {
 		var err error
 		sess, err = session.NewClientSession(db.client.sessionPool, db.client.id, session.Implicit)
@@ -297,7 +297,7 @@ func (db *Database) ListCollections(ctx context.Context, filter interface{}, opt
 		return nil, err
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && db.client.sessionPool != nil {
 		sess, err = session.NewClientSession(db.client.sessionPool, db.client.id, session.Implicit)
 		if err != nil {

@@ -174,7 +174,7 @@ func (s *sessionImpl) WithTransaction(ctx context.Context, fn func(sessCtx Sessi
 			return nil, err
 		}
 
-		res, err := fn(NewSessionContext(ctx, s))
+		res, err := fn(ContextWithSession(ctx, s))
 		if err != nil {
 			if s.clientSession.TransactionRunning() {
 				_ = s.AbortTransaction(ctx)
@@ -341,13 +341,21 @@ func (s *sessionImpl) Client() *Client {
 func (*sessionImpl) session() {
 }
 
-// sessionFromContext checks for a sessionImpl in the argued context and returns the session if it
+// SessionFromContext checks for a sessionImpl in the argued context and returns the session if it
 // exists
-func sessionFromContext(ctx context.Context) *session.Client {
+func SessionFromContext(ctx context.Context) *session.Client {
 	s := ctx.Value(sessionKey{})
 	if ses, ok := s.(*sessionImpl); ses != nil && ok {
 		return ses.clientSession
 	}
 
 	return nil
+}
+
+// ContextWithSession creates a new SessionContext associated with the given Context and Session parameters.
+func ContextWithSession(ctx context.Context, sess Session) SessionContext {
+	return &sessionContext{
+		Context: context.WithValue(ctx, sessionKey{}, sess),
+		Session: sess,
+	}
 }

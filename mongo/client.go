@@ -141,6 +141,16 @@ func NewClient(opts ...*options.ClientOptions) (*Client, error) {
 	return client, nil
 }
 
+// IsTopologyConsistent returns false when we have a replica set that claims to
+// have no primary but there exists a primary with all other nodes as secondaries. This
+// specifically works around HELP-13825.
+func (c *Client) IsTopologyConsistent() bool {
+	if topo, ok := c.deployment.(*topology.Topology); ok {
+		return topo.IsConsistent()
+	}
+	return true
+}
+
 // Connect initializes the Client by starting background monitoring goroutines.
 // If the Client was created using the NewClient function, this method must be called before a Client can be used.
 //
@@ -323,9 +333,6 @@ func (c *Client) configure(opts *options.ClientOptions) error {
 	var topologyOpts []topology.Option
 
 	// TODO(GODRIVER-814): Add tests for topology, server, and connection related options.
-
-	// ClusterClock
-	c.clock = new(session.ClusterClock)
 
 	// Pass down URI so topology can determine whether or not SRV polling is required
 	topologyOpts = append(topologyOpts, topology.WithURI(func(uri string) string {
@@ -688,7 +695,7 @@ func (c *Client) ListDatabases(ctx context.Context, filter interface{}, opts ...
 		ctx = context.Background()
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 
 	err := c.validSession(sess)
 	if sess == nil && c.sessionPool != nil {
@@ -776,7 +783,7 @@ func (c *Client) ListDatabaseNames(ctx context.Context, filter interface{}, opts
 //
 // Any error returned by the fn callback will be returned without any modifications.
 func WithSession(ctx context.Context, sess Session, fn func(SessionContext) error) error {
-	return fn(NewSessionContext(ctx, sess))
+	return fn(ContextWithSession(ctx, sess))
 }
 
 // UseSession creates a new Session and uses it to create a new SessionContext, which is used to call the fn callback.
