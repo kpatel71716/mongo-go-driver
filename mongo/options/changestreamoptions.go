@@ -27,8 +27,6 @@ type ChangeStreamOptions struct {
 	// the updated document will not be included in the change notification.
 	FullDocument *FullDocument
 	
-	// When set to ‘whenAvailable’ or ‘required’ will have both the delta and the full document before the change was applied
- 	FullDocumentBeforeChange *FullDocumentBeforeChange
 
 	// When set to ‘whenAvailable’ or ‘required’ will have both the delta and the full document before the change was applied
 	FullDocumentBeforeChange *FullDocumentBeforeChange
