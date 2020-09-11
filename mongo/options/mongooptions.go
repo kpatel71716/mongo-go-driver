@@ -101,6 +101,22 @@ const (
 	UpdateLookup FullDocument = "updateLookup"
 )
 
+type FullDocumentBeforeChange string
+
+const (
+	// Default / off does not include a document copy
+	FullDocumentBeforeChangeOff FullDocumentBeforeChange = "off"
+
+	// whenAvailable includes a delta describing the changes to the document and a copy of the entire document that
+	// was changed when it is available
+	FullDocumentBeforeChangeWhenAvailable FullDocumentBeforeChange = "whenAvailable"
+
+	// required includes a delta describing the changes to the document and a copy of the entire document that
+	// was changed
+	FullDocumentBeforeChangeRequired FullDocumentBeforeChange = "required"
+)
+
+
 // ArrayFilters is used to hold filters for the array filters CRUD option. If a registry is nil, bson.DefaultRegistry
 // will be used when converting the filter interfaces to BSON.
 type ArrayFilters struct {
