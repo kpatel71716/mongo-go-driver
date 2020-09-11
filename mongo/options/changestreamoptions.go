@@ -30,6 +30,9 @@ type ChangeStreamOptions struct {
 	// When set to ‘whenAvailable’ or ‘required’ will have both the delta and the full document before the change was applied
  	FullDocumentBeforeChange *FullDocumentBeforeChange
 
+	// When set to ‘whenAvailable’ or ‘required’ will have both the delta and the full document before the change was applied
+	FullDocumentBeforeChange *FullDocumentBeforeChange
+
 	// The maximum amount of time that the server should wait for new documents to satisfy a tailable cursor query.
 	MaxAwaitTime *time.Duration
 

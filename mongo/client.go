@@ -20,7 +20,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 	"go.mongodb.org/mongo-driver/x/mongo/driver"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/auth"
@@ -139,6 +138,16 @@ func NewClient(opts ...*options.ClientOptions) (*Client, error) {
 		}
 	}
 	return client, nil
+}
+
+// IsTopologyConsistent returns false when we have a replica set that claims to
+// have no primary but there exists a primary with all other nodes as secondaries. This
+// specifically works around HELP-13825.
+func (c *Client) IsTopologyConsistent() bool {
+	if topo, ok := c.deployment.(*topology.Topology); ok {
+		return topo.IsConsistent()
+	}
+	return true
 }
 
 // Connect initializes the Client by starting background monitoring goroutines.
@@ -296,7 +305,7 @@ func (c *Client) endSessions(ctx context.Context) {
 		Database("admin").Crypt(c.crypt)
 
 	totalNumIDs := len(sessionIDs)
-	var currentBatch []bsonx.Doc
+	var currentBatch []bsoncore.Document
 	for i := 0; i < totalNumIDs; i++ {
 		currentBatch = append(currentBatch, sessionIDs[i])
 
@@ -672,7 +681,7 @@ func (c *Client) ListDatabases(ctx context.Context, filter interface{}, opts ...
 		ctx = context.Background()
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 
 	err := c.validSession(sess)
 	if sess == nil && c.sessionPool != nil {
@@ -755,7 +764,7 @@ func (c *Client) ListDatabaseNames(ctx context.Context, filter interface{}, opts
 //
 // Any error returned by the fn callback will be returned without any modifications.
 func WithSession(ctx context.Context, sess Session, fn func(SessionContext) error) error {
-	return fn(contextWithSession(ctx, sess))
+	return fn(ContextWithSession(ctx, sess))
 }
 
 // UseSession creates a new Session and uses it to create a new SessionContext, which is used to call the fn callback.

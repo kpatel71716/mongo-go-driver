@@ -87,7 +87,7 @@ func newChangeStream(ctx context.Context, config changeStreamConfig, pipeline in
 		selector:   description.ReadPrefSelector(config.readPreference),
 	}
 
-	cs.sess = sessionFromContext(ctx)
+	cs.sess = SessionFromContext(ctx)
 	if cs.sess == nil && cs.client.sessionPool != nil {
 		cs.sess, cs.err = session.NewClientSession(cs.client.sessionPool, cs.client.id, session.Implicit)
 		if cs.err != nil {
@@ -350,6 +350,14 @@ func (cs *ChangeStream) createPipelineOptionsDoc() bsoncore.Document {
  			string(*cs.options.FullDocumentBeforeChange),
  		)
  	}
+
+	if cs.options.FullDocumentBeforeChange != nil {
+		plDoc = bsoncore.AppendStringElement(
+			plDoc,
+			"fullDocumentBeforeChange",
+			string(*cs.options.FullDocumentBeforeChange),
+		)
+	}
 
 	if cs.options.ResumeAfter != nil {
 		var raDoc bsoncore.Document

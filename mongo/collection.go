@@ -184,7 +184,7 @@ func (coll *Collection) BulkWrite(ctx context.Context, models []WriteModel,
 		ctx = context.Background()
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && coll.client.sessionPool != nil {
 		var err error
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
@@ -250,7 +250,7 @@ func (coll *Collection) insert(ctx context.Context, documents []interface{},
 		}
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && coll.client.sessionPool != nil {
 		var err error
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
@@ -404,7 +404,7 @@ func (coll *Collection) delete(ctx context.Context, filter interface{}, deleteOn
 		return nil, err
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && coll.client.sessionPool != nil {
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
 		if err != nil {
@@ -529,7 +529,7 @@ func (coll *Collection) updateOrReplace(ctx context.Context, filter bsoncore.Doc
 	}
 	updateDoc, _ = bsoncore.AppendDocumentEnd(updateDoc, uidx)
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && coll.client.sessionPool != nil {
 		var err error
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
@@ -736,7 +736,7 @@ func aggregate(a aggregateParams) (*Cursor, error) {
 		return nil, err
 	}
 
-	sess := sessionFromContext(a.ctx)
+	sess := SessionFromContext(a.ctx)
 	if sess == nil && a.client.sessionPool != nil {
 		sess, err = session.NewClientSession(a.client.sessionPool, a.client.id, session.Implicit)
 		if err != nil {
@@ -868,7 +868,7 @@ func (coll *Collection) CountDocuments(ctx context.Context, filter interface{},
 		return 0, err
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && coll.client.sessionPool != nil {
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
 		if err != nil {
@@ -945,7 +945,7 @@ func (coll *Collection) EstimatedDocumentCount(ctx context.Context,
 		ctx = context.Background()
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 
 	var err error
 	if sess == nil && coll.client.sessionPool != nil {
@@ -1009,7 +1009,7 @@ func (coll *Collection) Distinct(ctx context.Context, fieldName string, filter i
 		return nil, err
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 
 	if sess == nil && coll.client.sessionPool != nil {
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
@@ -1098,7 +1098,7 @@ func (coll *Collection) Find(ctx context.Context, filter interface{},
 		return nil, err
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && coll.client.sessionPool != nil {
 		var err error
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
@@ -1296,7 +1296,7 @@ func (coll *Collection) findAndModify(ctx context.Context, op *operation.FindAnd
 		ctx = context.Background()
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	var err error
 	if sess == nil && coll.client.sessionPool != nil {
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)
@@ -1570,7 +1570,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 		ctx = context.Background()
 	}
 
-	sess := sessionFromContext(ctx)
+	sess := SessionFromContext(ctx)
 	if sess == nil && coll.client.sessionPool != nil {
 		var err error
 		sess, err = session.NewClientSession(coll.client.sessionPool, coll.client.id, session.Implicit)

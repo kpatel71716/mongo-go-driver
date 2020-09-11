@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 	"go.mongodb.org/mongo-driver/x/mongo/driver"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/description"
@@ -69,23 +68,29 @@ type sessionKey struct {
 // errors or any operation errors that occur after the timeout expires will be returned without retrying. For a usage
 // example, see the Client.StartSession method documentation.
 //
-// ClusterTime, OperationTime, and Client return the session's current operation time, the session's current cluster
-// time, and the Client associated with the session, respectively.
+// ClusterTime, OperationTime, Client, and ID return the session's current operation time, the session's current cluster
+// time, the Client associated with the session, and the ID document associated with the session, respectively. The ID
+// document for a session is in the form {"id": <BSON binary value>}.
 //
 // EndSession method should abort any existing transactions and close the session.
 //
 // AdvanceClusterTime and AdvanceOperationTime are for internal use only and must not be called.
 type Session interface {
+	// Functions to modify session state.
 	StartTransaction(...*options.TransactionOptions) error
 	AbortTransaction(context.Context) error
 	CommitTransaction(context.Context) error
 	WithTransaction(ctx context.Context, fn func(sessCtx SessionContext) (interface{}, error),
 		opts ...*options.TransactionOptions) (interface{}, error)
+	EndSession(context.Context)
+
+	// Functions to retrieve session properties.
 	ClusterTime() bson.Raw
 	OperationTime() *primitive.Timestamp
 	Client() *Client
-	EndSession(context.Context)
+	ID() bson.Raw
 
+	// Functions to modify mutable session properties.
 	AdvanceClusterTime(bson.Raw) error
 	AdvanceOperationTime(*primitive.Timestamp) error
 
@@ -96,7 +101,6 @@ type Session interface {
 // stability guarantee. It may be removed at any time.
 type XSession interface {
 	ClientSession() *session.Client
-	ID() bsonx.Doc
 }
 
 // sessionImpl represents a set of sequential operations executed by an application that are related in some way.
@@ -115,9 +119,9 @@ func (s *sessionImpl) ClientSession() *session.Client {
 	return s.clientSession
 }
 
-// ID implements the XSession interface.
-func (s *sessionImpl) ID() bsonx.Doc {
-	return s.clientSession.SessionID
+// ID implements the Session interface.
+func (s *sessionImpl) ID() bson.Raw {
+	return bson.Raw(s.clientSession.SessionID)
 }
 
 // EndSession implements the Session interface.
@@ -141,7 +145,7 @@ func (s *sessionImpl) WithTransaction(ctx context.Context, fn func(sessCtx Sessi
 			return nil, err
 		}
 
-		res, err := fn(contextWithSession(ctx, s))
+		res, err := fn(ContextWithSession(ctx, s))
 		if err != nil {
 			if s.clientSession.TransactionRunning() {
 				_ = s.AbortTransaction(ctx)
@@ -308,9 +312,9 @@ func (s *sessionImpl) Client() *Client {
 func (*sessionImpl) session() {
 }
 
-// sessionFromContext checks for a sessionImpl in the argued context and returns the session if it
+// SessionFromContext checks for a sessionImpl in the argued context and returns the session if it
 // exists
-func sessionFromContext(ctx context.Context) *session.Client {
+func SessionFromContext(ctx context.Context) *session.Client {
 	s := ctx.Value(sessionKey{})
 	if ses, ok := s.(*sessionImpl); ses != nil && ok {
 		return ses.clientSession
@@ -319,8 +323,8 @@ func sessionFromContext(ctx context.Context) *session.Client {
 	return nil
 }
 
-// contextWithSession creates a new SessionContext associated with the given Context and Session parameters.
-func contextWithSession(ctx context.Context, sess Session) SessionContext {
+// ContextWithSession creates a new SessionContext associated with the given Context and Session parameters.
+func ContextWithSession(ctx context.Context, sess Session) SessionContext {
 	return &sessionContext{
 		Context: context.WithValue(ctx, sessionKey{}, sess),
 		Session: sess,

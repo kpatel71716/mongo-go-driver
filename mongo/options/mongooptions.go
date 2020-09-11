@@ -101,6 +101,8 @@ const (
 	UpdateLookup FullDocument = "updateLookup"
 )
 
+// FullDocumentBeforeChange specifies whether a change stream should include a copy of the entire document that was changed from
+// the time at which the update is applied
 type FullDocumentBeforeChange string
 
 const (
@@ -115,7 +117,6 @@ const (
 	// was changed
 	FullDocumentBeforeChangeRequired FullDocumentBeforeChange = "required"
 )
-
 
 // ArrayFilters is used to hold filters for the array filters CRUD option. If a registry is nil, bson.DefaultRegistry
 // will be used when converting the filter interfaces to BSON.
